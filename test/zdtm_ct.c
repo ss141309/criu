@@ -11,6 +11,8 @@
 #include <errno.h>
 #include <sys/utsname.h>
 
+#include "zdtm/lib/sysctl.h"
+
 #ifndef CLONE_NEWTIME
 #define CLONE_NEWTIME 0x00000080 /* New time namespace */
 #endif
@@ -111,6 +113,9 @@ int main(int argc, char **argv)
 	if (pid == 0) {
 		if (!uid) {
 			if (create_timens())
+				exit(1);
+			// Allow all GIDs to open an unprivileged ICMP socket
+			if (sysctl_write_str("/proc/sys/net/ipv4/ping_group_range", "0   2147483647"))
 				exit(1);
 			if (mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL)) {
 				fprintf(stderr, "mount(/, S_REC | MS_SLAVE)): %m");

@@ -20,6 +20,7 @@
 #include <sys/prctl.h>
 
 #include "zdtmtst.h"
+#include "sysctl.h"
 #include "ns.h"
 
 int criu_status_in = -1, criu_status_in_peer = -1, criu_status_out = -1;
@@ -153,6 +154,16 @@ static int prepare_mntns(void)
 		return -1;
 	}
 	close(dfd);
+
+	return 0;
+}
+
+static int set_ping_group_range(void)
+{
+	if (sysctl_write_str("/proc/sys/net/ipv4/ping_group_range", "0   2147483647")) {
+		fprintf(stderr, "sysctl_write_str() failed: %m\n");
+		return -1;
+	}
 
 	return 0;
 }
@@ -331,6 +342,10 @@ int ns_init(int argc, char **argv)
 
 	if (create_timens())
 		exit(1);
+
+	if (set_ping_group_range() < 0) {
+		exit(1);
+	}
 
 	if (init_notify()) {
 		fprintf(stderr, "Can't init pre-dump notification: %m");
@@ -524,6 +539,10 @@ void ns_create(int argc, char **argv)
 
 	unlink(pidfile);
 	pidfile = pidf;
+
+	if (set_ping_group_range() < 0) {
+		exit(1);
+	}
 
 	if (write_pidfile(pid))
 		exit(1);

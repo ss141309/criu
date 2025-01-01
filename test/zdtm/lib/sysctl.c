@@ -57,3 +57,30 @@ err:
 	close(fd);
 	return ret;
 }
+
+int sysctl_write_str(const char *name, const char *val)
+{
+	int fd;
+	int ret;
+	char buf[16];
+
+	fd = open(name, O_WRONLY);
+	if (fd < 0) {
+		pr_perror("Can't open %s", name);
+		return fd;
+	}
+
+	sprintf(buf, "%s\n", val);
+
+	ret = write(fd, buf, strlen(buf));
+	if (ret < 0) {
+		pr_perror("Can't write %s into %s", val, name);
+		ret = -errno;
+		goto err;
+	}
+
+	ret = 0;
+err:
+	close(fd);
+	return ret;
+}

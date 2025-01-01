@@ -3,5 +3,6 @@
 
 extern int sysctl_read_int(const char *name, int *data);
 extern int sysctl_write_int(const char *name, int val);
+extern int sysctl_write_str(const char *name, const char *val);
 
 #endif
