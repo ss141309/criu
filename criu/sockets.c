@@ -65,7 +65,7 @@ const char *socket_proto_name(unsigned int proto, char *nm, size_t size)
 		[IPPROTO_IPV6] = __stringify_1(IPPROTO_IPV6), [IPPROTO_RSVP] = __stringify_1(IPPROTO_RSVP),
 		[IPPROTO_GRE] = __stringify_1(IPPROTO_GRE),   [IPPROTO_ESP] = __stringify_1(IPPROTO_ESP),
 		[IPPROTO_AH] = __stringify_1(IPPROTO_AH),     [IPPROTO_UDPLITE] = __stringify_1(IPPROTO_UDPLITE),
-		[IPPROTO_RAW] = __stringify_1(IPPROTO_RAW),
+		[IPPROTO_RAW] = __stringify_1(IPPROTO_RAW),   [IPPROTO_ICMPV6] = __stringify_1(IPPROTO_ICMPV6),
 	};
 	return __socket_const_name(nm, size, protos, ARRAY_SIZE(protos), proto);
 }

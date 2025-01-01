@@ -32,6 +32,7 @@
 #include "rst-malloc.h"
 #include "sockets.h"
 #include "sk-inet.h"
+#include "sysctl.h"
 #include "protobuf.h"
 #include "util.h"
 #include "namespaces.h"
@@ -481,6 +482,23 @@ static int do_dump_one_inet_fd(int lfd, u32 id, const struct fd_parms *p, int fa
 			goto err;
 	}
 
+	if (type == SOCK_DGRAM && (proto == IPPROTO_ICMP || proto == IPPROTO_ICMPV6)) {
+		char buffer[16];
+
+		struct sysctl_req req[] = {
+			{ "net/ipv4/ping_group_range", &buffer, CTL_STR(16) },
+		};
+
+		ret = sysctl_op(req, ARRAY_SIZE(req), CTL_READ, CLONE_NEWNET);
+		if (ret < 0) {
+			pr_perror("Failed to read ping group range");
+			goto err;
+		}
+
+		buffer[strlen(buffer)] = '\0';
+		ie.ping_grp_range = buffer;
+	}
+
 	sk->cork = false;
 	if (type != SOCK_RAW) {
 		switch (proto) {
@@ -876,6 +894,20 @@ static int open_inet_sk(struct file_desc *d, int *new_fd)
 
 	if (run_setsockcreatecon(fle->fe))
 		return -1;
+
+	if (ie->type == SOCK_DGRAM && (ie->proto == IPPROTO_ICMP || ie->proto == IPPROTO_ICMPV6)) {
+		if (strlen(ie->ping_grp_range) > 1) {
+			int ret;
+			struct sysctl_req req[] = {
+				{ "net/ipv4/ping_group_range", ie->ping_grp_range, CTL_STR(strlen(ie->ping_grp_range)) },
+			};
+			ret = sysctl_op(req, ARRAY_SIZE(req), CTL_WRITE, CLONE_NEWNET);
+			if (ret < 0) {
+				pr_perror("Failed to set ping_group_range");
+				return -1;
+			}
+		}
+	}
 
 	sk = socket(ie->family, ie->type, ie->proto);
 	if (sk < 0) {
