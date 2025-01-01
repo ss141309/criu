@@ -160,7 +160,8 @@ static int prepare_mntns(void)
 
 static int set_ping_group_range(void)
 {
-	if (sysctl_write_str("/proc/sys/net/ipv4/ping_group_range", "0   2147483647")) {
+	// Allow GIDs 40000-50000 to open an unprivileged ICMP socket
+	if (sysctl_write_str("/proc/sys/net/ipv4/ping_group_range", "40000 50000")) {
 		fprintf(stderr, "sysctl_write_str() failed: %m\n");
 		return -1;
 	}
@@ -539,10 +540,6 @@ void ns_create(int argc, char **argv)
 
 	unlink(pidfile);
 	pidfile = pidf;
-
-	if (set_ping_group_range() < 0) {
-		exit(1);
-	}
 
 	if (write_pidfile(pid))
 		exit(1);

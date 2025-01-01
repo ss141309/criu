@@ -3,6 +3,7 @@
 #include <sys/wait.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/mount.h>
 #include <unistd.h>
 #include <time.h>
@@ -10,8 +11,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/utsname.h>
-
-#include "zdtm/lib/sysctl.h"
 
 #ifndef CLONE_NEWTIME
 #define CLONE_NEWTIME 0x00000080 /* New time namespace */
@@ -93,6 +92,33 @@ static int create_timens(void)
 	return 0;
 }
 
+static int sysctl_write_str(const char *name, const char *val)
+{
+	int fd;
+	int ret;
+	char buf[16];
+
+	fd = open(name, O_WRONLY);
+	if (fd < 0) {
+		fprintf(stderr, "Can't open %s: %m\n", name);
+		return fd;
+	}
+
+	sprintf(buf, "%s\n", val);
+
+	ret = write(fd, buf, strlen(buf));
+	if (ret < 0) {
+		fprintf(stderr, "Can't write %s into %s: %m\n", val, name);
+		ret = -errno;
+		goto err;
+	}
+
+	ret = 0;
+err:
+	close(fd);
+	return ret;
+}
+
 int main(int argc, char **argv)
 {
 	uid_t uid;
@@ -114,8 +140,8 @@ int main(int argc, char **argv)
 		if (!uid) {
 			if (create_timens())
 				exit(1);
-			// Allow all GIDs to open an unprivileged ICMP socket
-			if (sysctl_write_str("/proc/sys/net/ipv4/ping_group_range", "0   2147483647"))
+			// Allow GIDs 40000-50000 to open an unprivileged ICMP socket
+			if (sysctl_write_str("/proc/sys/net/ipv4/ping_group_range", "40000 50000"))
 				exit(1);
 			if (mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL)) {
 				fprintf(stderr, "mount(/, S_REC | MS_SLAVE)): %m");

@@ -482,23 +482,6 @@ static int do_dump_one_inet_fd(int lfd, u32 id, const struct fd_parms *p, int fa
 			goto err;
 	}
 
-	if (type == SOCK_DGRAM && (proto == IPPROTO_ICMP || proto == IPPROTO_ICMPV6)) {
-		char buffer[16];
-
-		struct sysctl_req req[] = {
-			{ "net/ipv4/ping_group_range", &buffer, CTL_STR(16) },
-		};
-
-		ret = sysctl_op(req, ARRAY_SIZE(req), CTL_READ, CLONE_NEWNET);
-		if (ret < 0) {
-			pr_perror("Failed to read ping group range");
-			goto err;
-		}
-
-		buffer[strlen(buffer)] = '\0';
-		ie.ping_grp_range = buffer;
-	}
-
 	sk->cork = false;
 	if (type != SOCK_RAW) {
 		switch (proto) {
@@ -594,6 +577,23 @@ static int do_dump_one_inet_fd(int lfd, u32 id, const struct fd_parms *p, int fa
 
 	if (dump_socket_opts(lfd, &skopts))
 		goto err;
+
+	if (type == SOCK_DGRAM && (proto == IPPROTO_ICMP || proto == IPPROTO_ICMPV6)) {
+		char buffer[16];
+
+		struct sysctl_req req[] = {
+			{ "net/ipv4/ping_group_range", &buffer, CTL_STR(16) },
+		};
+
+		ret = sysctl_op(req, ARRAY_SIZE(req), CTL_READ, CLONE_NEWNET);
+		if (ret < 0) {
+			pr_perror("Failed to read ping group range");
+			goto err;
+		}
+
+		buffer[strlen(buffer)] = '\0';
+		ie.ping_grp_range = buffer;
+	}
 
 	pr_info("Dumping inet socket at %d\n", p->fd);
 	show_one_inet("Dumping", sk);
