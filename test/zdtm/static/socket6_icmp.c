@@ -1,10 +1,10 @@
 #include "zdtmtst.h"
 
-const char *test_doc = "static test for ICMP socket\n";
+const char *test_doc = "static test for IP6/ICMP socket\n";
 const char *test_author = "समीर सिंह Sameer Singh <lumarzeli30@gmail.com>\n";
 
 /* Description:
- * Send a ping to localhost using ICMP socket
+ * Send a ping to localhost using IP6/ICMP socket
  */
 
 #include <stdio.h>
@@ -12,7 +12,7 @@ const char *test_author = "समीर सिंह Sameer Singh <lumarzeli30@g
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netinet/ip_icmp.h>
+#include <netinet/icmp6.h>
 #include <arpa/inet.h>
 #include <sys/time.h>
 #include <netdb.h>
@@ -24,17 +24,17 @@ static int echo_id = 1234;
 
 int main(int argc, char **argv)
 {
-	int ret, sock, seq = 0;
+	int ret, sock, seq = 0, recv_len = 0;
 	char packet[PACKET_SIZE], recv_packet[PACKET_SIZE];
 
 	struct timeval tv;
-	struct icmphdr icmp_header, *icmp_reply;
-	struct sockaddr_in addr, recv_addr;
+	struct icmp6_hdr icmp_header, *icmp_reply;
+	struct sockaddr_in6 addr, recv_addr;
 	socklen_t addr_len;
 
 	test_init(argc, argv);
 
-	sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+	sock = socket(PF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6);
 	if (sock < 0) {
 		pr_perror("Can't create socket");
 		return 1;
@@ -48,14 +48,14 @@ int main(int argc, char **argv)
 	}
 
 	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	addr.sin6_family = AF_INET6;
+	inet_pton(AF_INET6, "::1", &addr.sin6_addr);
 
 	memset(&icmp_header, 0, sizeof(icmp_header));
-	icmp_header.type = ICMP_ECHO;
-	icmp_header.code = 0;
-	icmp_header.un.echo.id = echo_id;
-	icmp_header.un.echo.sequence = seq;
+	icmp_header.icmp6_type = ICMP6_ECHO_REQUEST;
+	icmp_header.icmp6_code = 0;
+	icmp_header.icmp6_id = echo_id;
+	icmp_header.icmp6_seq = seq;
 
 	memcpy(packet, &icmp_header, sizeof(icmp_header));
 	memset(packet + sizeof(icmp_header), 0xa5,
@@ -68,29 +68,28 @@ int main(int argc, char **argv)
 		     (struct sockaddr *)&addr, sizeof(addr));
 
 	if (ret < 0) {
-		fail("Can't send");
+		pr_perror("Can't send");
 		return 1;
 	}
 
 	addr_len = sizeof(recv_addr);
 
-	ret = recvfrom(sock, recv_packet, sizeof(recv_packet), 0,
-		       (struct sockaddr *)&recv_addr, &addr_len);
+	recv_len = recvfrom(sock, recv_packet, sizeof(recv_packet), 0,
+			    (struct sockaddr *)&recv_addr, &addr_len);
 
-	if (ret < 0) {
-		fail("Can't recv");
+	if (recv_len < 0) {
+		pr_perror("Can't recv");
 		return 1;
 	}
 
-	icmp_reply = (struct icmphdr *)recv_packet;
+	icmp_reply = (struct icmp6_hdr *)recv_packet;
 
-	if (icmp_reply->type != ICMP_ECHOREPLY) {
+	if (icmp_reply->icmp6_type != ICMP6_ECHO_REPLY) {
 		fail("Got no ICMP_ECHO_REPLY");
 		return 1;
 	}
 
 	close(sock);
-
 	pass();
 	return 0;
 }
