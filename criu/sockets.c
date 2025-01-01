@@ -65,7 +65,7 @@ const char *socket_proto_name(unsigned int proto, char *nm, size_t size)
 		[IPPROTO_IPV6] = __stringify_1(IPPROTO_IPV6), [IPPROTO_RSVP] = __stringify_1(IPPROTO_RSVP),
 		[IPPROTO_GRE] = __stringify_1(IPPROTO_GRE),   [IPPROTO_ESP] = __stringify_1(IPPROTO_ESP),
 		[IPPROTO_AH] = __stringify_1(IPPROTO_AH),     [IPPROTO_UDPLITE] = __stringify_1(IPPROTO_UDPLITE),
-		[IPPROTO_RAW] = __stringify_1(IPPROTO_RAW),
+		[IPPROTO_RAW] = __stringify_1(IPPROTO_RAW),   [IPPROTO_ICMPV6] = __stringify_1(IPPROTO_ICMPV6),
 	};
 	return __socket_const_name(nm, size, protos, ARRAY_SIZE(protos), proto);
 }
@@ -926,7 +926,7 @@ int collect_sockets(struct ns_id *ns)
 	req.r.i.sdiag_protocol = IPPROTO_ICMP;
 	req.r.i.idiag_ext = 0;
 	req.r.i.idiag_states = -1; /* All */
-	set_collect_bit(req.r.n.sdiag_family, req.r.n.sdiag_protocol);
+	set_collect_bit(req.r.i.sdiag_family, req.r.i.sdiag_protocol);
 
 	/* Collect IPv6 TCP sockets */
 	req.r.i.sdiag_family = AF_INET6;
@@ -972,7 +972,7 @@ int collect_sockets(struct ns_id *ns)
 	req.r.i.sdiag_protocol = IPPROTO_ICMPV6;
 	req.r.i.idiag_ext = 0;
 	req.r.i.idiag_states = -1; /* All */
-	set_collect_bit(req.r.n.sdiag_family, req.r.n.sdiag_protocol);
+	set_collect_bit(req.r.i.sdiag_family, req.r.i.sdiag_protocol);
 
 	req.r.p.sdiag_family = AF_PACKET;
 	req.r.p.sdiag_protocol = 0;
