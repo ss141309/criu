@@ -140,8 +140,8 @@ int main(int argc, char **argv)
 		if (!uid) {
 			if (create_timens())
 				exit(1);
-			// Allow GIDs 40000-50000 to open an unprivileged ICMP socket
-			if (sysctl_write_str("/proc/sys/net/ipv4/ping_group_range", "40000 50000"))
+			// Allow GIDs 0-58468 to open an unprivileged ICMP socket
+			if (sysctl_write_str("/proc/sys/net/ipv4/ping_group_range", "0 58468"))
 				exit(1);
 			if (mount(NULL, "/", NULL, MS_REC | MS_SLAVE, NULL)) {
 				fprintf(stderr, "mount(/, S_REC | MS_SLAVE)): %m");

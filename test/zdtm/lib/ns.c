@@ -160,8 +160,8 @@ static int prepare_mntns(void)
 
 static int set_ping_group_range(void)
 {
-	// Allow GIDs 40000-50000 to open an unprivileged ICMP socket
-	if (sysctl_write_str("/proc/sys/net/ipv4/ping_group_range", "40000 50000")) {
+	// Allow GIDs 0-58468 to open an unprivileged ICMP socket
+	if (sysctl_write_str("/proc/sys/net/ipv4/ping_group_range", "0 58468")) {
 		fprintf(stderr, "sysctl_write_str() failed: %m\n");
 		return -1;
 	}
