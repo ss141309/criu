@@ -84,8 +84,9 @@ int main(int argc, char **argv)
 
 	icmp_reply = (struct icmphdr *)recv_packet;
 
-	if (icmp_reply->type == ICMP_ECHOREPLY) {
+	if (icmp_reply->type != ICMP_ECHOREPLY) {
 		fail("Got no ICMP_ECHO_REPLY");
+		return 1;
 	}
 
 	close(sock);
