@@ -592,7 +592,10 @@ static int do_dump_one_inet_fd(int lfd, u32 id, const struct fd_parms *p, int fa
 		}
 
 		buffer[strlen(buffer)] = '\0';
-		ie.ping_grp_range = buffer;
+
+		ie.ping_grp_range = xstrdup(buffer);
+		if (!ie.ping_grp_range)
+			goto err;
 	}
 
 	pr_info("Dumping inet socket at %d\n", p->fd);
@@ -645,6 +648,7 @@ err:
 	xfree(ie.src_addr);
 	xfree(ie.dst_addr);
 	xfree(ie.ifname);
+	xfree(ie.ping_grp_range);
 	return err;
 }
 
